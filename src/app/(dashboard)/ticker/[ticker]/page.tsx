@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PriceChart } from "./price-chart";
+import { AnalyzeButton } from "./analyze-button";
 import {
   CONFIDENCE_JA,
   GUIDANCE_STATUS_JA,
@@ -198,10 +199,13 @@ export default async function TickerDetailPage({ params }: PageProps) {
       {/* AI 分析結果 */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingDown className="h-5 w-5 text-blue-500" />
-            AI 分析結果
-          </CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-blue-500" />
+              AI 分析結果
+            </CardTitle>
+            <AnalyzeButton ticker={watchItem.ticker} />
+          </div>
         </CardHeader>
         <CardContent>
           {(analyses?.length ?? 0) === 0 ? (

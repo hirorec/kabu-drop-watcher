@@ -55,3 +55,53 @@ export function buildUserPrompt(input: AnalysisInput): string {
     .filter((l) => l !== null)
     .join("\n");
 }
+
+// 手動分析用：最新開示 + 直近の株価動向を合わせた入力
+export type ManualAnalysisInput = {
+  ticker: string;
+  company_name: string | null;
+  latest_disclosures: { announced_at: string; period: string | null; raw_text: string }[];
+  recent_prices: { captured_at: string; price: number; change_pct: number | null }[];
+};
+
+export function buildManualUserPrompt(input: ManualAnalysisInput): string {
+  const disclosureBlock =
+    input.latest_disclosures.length === 0
+      ? "(最近の適時開示なし)"
+      : input.latest_disclosures
+          .map((d, i) => {
+            const period = d.period ? `【期間: ${d.period}】 ` : "";
+            return `${i + 1}. ${d.announced_at} ${period}${d.raw_text}`;
+          })
+          .join("\n");
+
+  const priceBlock =
+    input.recent_prices.length === 0
+      ? "(株価スナップショットなし)"
+      : input.recent_prices
+          .map((p) => {
+            const pct =
+              p.change_pct == null
+                ? ""
+                : ` (${p.change_pct > 0 ? "+" : ""}${p.change_pct.toFixed(2)}%)`;
+            return `- ${p.captured_at} ¥${p.price.toLocaleString()}${pct}`;
+          })
+          .join("\n");
+
+  const nameLine = input.company_name
+    ? `銘柄: ${input.ticker} ${input.company_name}`
+    : `銘柄: ${input.ticker}`;
+
+  return [
+    "以下の銘柄について、直近の適時開示と株価動向を合わせて評価し、構造化された結果を返してください。",
+    "情報が少ない場合は confidence を low にし、reason_label は unclear を選ぶこと。",
+    "",
+    nameLine,
+    "",
+    "最近の適時開示:",
+    disclosureBlock,
+    "",
+    "直近の株価スナップショット（新しい順）:",
+    priceBlock,
+  ].join("\n");
+}

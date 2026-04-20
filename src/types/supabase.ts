@@ -100,6 +100,7 @@ export type Database = {
           id: string
           opened_at: string | null
           sent_at: string
+          source_id: string | null
           ticker: string
           title: string
           type: string
@@ -110,6 +111,7 @@ export type Database = {
           id?: string
           opened_at?: string | null
           sent_at?: string
+          source_id?: string | null
           ticker: string
           title: string
           type: string
@@ -120,6 +122,7 @@ export type Database = {
           id?: string
           opened_at?: string | null
           sent_at?: string
+          source_id?: string | null
           ticker?: string
           title?: string
           type?: string

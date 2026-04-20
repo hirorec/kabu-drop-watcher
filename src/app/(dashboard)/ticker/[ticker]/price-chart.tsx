@@ -54,13 +54,14 @@ export function PriceChart({ ticker }: { ticker: string }) {
       timeScale: { borderColor: "#e5e7eb" },
     });
 
+    // 日本の株アプリ（SBI 等）に合わせた配色：上昇=赤、下落=緑
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: "#16a34a",
-      downColor: "#dc2626",
-      borderUpColor: "#16a34a",
-      borderDownColor: "#dc2626",
-      wickUpColor: "#16a34a",
-      wickDownColor: "#dc2626",
+      upColor: "#dc2626",
+      downColor: "#16a34a",
+      borderUpColor: "#dc2626",
+      borderDownColor: "#16a34a",
+      wickUpColor: "#dc2626",
+      wickDownColor: "#16a34a",
     });
 
     chartRef.current = chart;

@@ -6,6 +6,11 @@ import { TrendingDown, Eye, FileText, Activity } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
 import Link from "next/link";
+import {
+  SuggestionHeading,
+  SuggestionList,
+  type SuggestionDisplay,
+} from "./suggestion-list";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -23,6 +28,7 @@ export default async function DashboardPage() {
     { data: drops },
     { data: recentSnapshots },
     { data: recentEvents },
+    { data: suggestionRows },
   ] = await Promise.all([
     // ウォッチリスト件数
     supabase
@@ -49,6 +55,12 @@ export default async function DashboardPage() {
       .select("id, ticker, announced_at, raw_text, period")
       .order("announced_at", { ascending: false })
       .limit(5),
+    // AI 選定の監視候補（最新 batch 分）
+    supabase
+      .from("watchlist_suggestions")
+      .select("id, ticker, company_name, reasoning, score, batch_id, generated_at")
+      .order("generated_at", { ascending: false })
+      .limit(50),
   ]);
 
   // 最新スナップショットを銘柄ごとに1件に絞る
@@ -66,6 +78,23 @@ export default async function DashboardPage() {
 
   const enabledCount = (watchlists ?? []).filter((w) => w.enabled).length;
   const totalCount = (watchlists ?? []).length;
+
+  // 最新 batch_id のみ抽出し、未登録銘柄をスコア降順で表示
+  const latestBatchId = suggestionRows?.[0]?.batch_id ?? null;
+  const registeredTickers = new Set(
+    (watchlists ?? []).map((w) => w.ticker)
+  );
+  const suggestionItems: SuggestionDisplay[] = (suggestionRows ?? [])
+    .filter((s) => s.batch_id === latestBatchId)
+    .filter((s) => !registeredTickers.has(s.ticker))
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .map((s) => ({
+      id: s.id,
+      ticker: s.ticker,
+      company_name: s.company_name,
+      reasoning: s.reasoning,
+      score: s.score,
+    }));
 
   return (
     <div className="space-y-6">
@@ -253,12 +282,30 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      {/* 監視候補（AI 選定） */}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <SuggestionHeading />
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {latestBatchId === null ? (
+            <p className="text-sm text-gray-500">
+              候補はまだ生成されていません。市場クローズ後に自動更新されます。
+            </p>
+          ) : (
+            <SuggestionList items={suggestionItems} />
+          )}
+        </CardContent>
+      </Card>
+
       {/* ウォッチリストへのリンク */}
       {totalCount === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8">
             <p className="text-sm text-gray-500">
-              まずはウォッチリストに銘柄を追加しましょう。
+              上記の候補から追加するか、手動で銘柄を登録してください。
             </p>
             <Link
               href="/watchlist"

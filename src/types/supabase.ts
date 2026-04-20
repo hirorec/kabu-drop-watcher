@@ -193,6 +193,36 @@ export type Database = {
         }
         Relationships: []
       }
+      watchlist_suggestions: {
+        Row: {
+          batch_id: string
+          company_name: string
+          generated_at: string
+          id: string
+          reasoning: string | null
+          score: number | null
+          ticker: string
+        }
+        Insert: {
+          batch_id: string
+          company_name: string
+          generated_at?: string
+          id?: string
+          reasoning?: string | null
+          score?: number | null
+          ticker: string
+        }
+        Update: {
+          batch_id?: string
+          company_name?: string
+          generated_at?: string
+          id?: string
+          reasoning?: string | null
+          score?: number | null
+          ticker?: string
+        }
+        Relationships: []
+      }
       watchlists: {
         Row: {
           company_name: string

@@ -2,7 +2,14 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
-import { ArrowLeft, TrendingDown, Activity, FileText, Bell } from "lucide-react";
+import {
+  ArrowLeft,
+  TrendingDown,
+  Activity,
+  FileText,
+  Bell,
+  MessageCircle,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchQuotes } from "@/lib/stock";
@@ -10,6 +17,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PriceChart } from "./price-chart";
 import { AnalyzeButton } from "./analyze-button";
+import { TickerChat } from "./ticker-chat";
 import {
   CONFIDENCE_JA,
   GUIDANCE_STATUS_JA,
@@ -312,6 +320,19 @@ export default async function TickerDetailPage({ params }: PageProps) {
               })}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* 銘柄について質問 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-purple-500" />
+            銘柄について質問
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TickerChat ticker={watchItem.ticker} />
         </CardContent>
       </Card>
 

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 export async function addTicker(formData: FormData) {
   const ticker = (formData.get("ticker") as string)?.trim().toUpperCase();
   const companyName = (formData.get("companyName") as string)?.trim();
+  const memo = (formData.get("memo") as string)?.trim() || null;
 
   if (!ticker || !companyName) {
     return { error: "銘柄コードと企業名は必須です" };
@@ -24,6 +25,7 @@ export async function addTicker(formData: FormData) {
     user_id: user.id,
     ticker,
     company_name: companyName,
+    memo,
   });
 
   if (error) {

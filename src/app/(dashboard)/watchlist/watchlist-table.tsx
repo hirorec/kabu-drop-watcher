@@ -2,6 +2,17 @@
 
 import { useTransition } from "react";
 import { removeTicker, toggleTicker } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 import type { Database } from "@/types/supabase";
 
 type WatchlistItem = Database["public"]["Tables"]["watchlists"]["Row"];
@@ -9,7 +20,7 @@ type WatchlistItem = Database["public"]["Tables"]["watchlists"]["Row"];
 export function WatchlistTable({ items }: { items: WatchlistItem[] }) {
   if (items.length === 0) {
     return (
-      <div className="rounded-md border border-dashed border-gray-300 p-12 text-center">
+      <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center">
         <p className="text-sm text-gray-500">
           ウォッチリストに銘柄が登録されていません。
         </p>
@@ -21,23 +32,23 @@ export function WatchlistTable({ items }: { items: WatchlistItem[] }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-md border border-gray-200">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-left text-gray-500">
-          <tr>
-            <th className="px-4 py-3 font-medium">有効</th>
-            <th className="px-4 py-3 font-medium">銘柄コード</th>
-            <th className="px-4 py-3 font-medium">企業名</th>
-            <th className="px-4 py-3 font-medium">メモ</th>
-            <th className="px-4 py-3 font-medium">操作</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
+    <div className="rounded-lg border border-gray-200">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-gray-50 hover:bg-gray-50">
+            <TableHead className="w-16">監視</TableHead>
+            <TableHead className="w-28">銘柄コード</TableHead>
+            <TableHead>企業名</TableHead>
+            <TableHead>メモ</TableHead>
+            <TableHead className="w-20">操作</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {items.map((item) => (
             <WatchlistRow key={item.id} item={item} />
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }
@@ -45,9 +56,9 @@ export function WatchlistTable({ items }: { items: WatchlistItem[] }) {
 function WatchlistRow({ item }: { item: WatchlistItem }) {
   const [isPending, startTransition] = useTransition();
 
-  const handleToggle = () => {
+  const handleToggle = (checked: boolean) => {
     startTransition(async () => {
-      await toggleTicker(item.id, !item.enabled);
+      await toggleTicker(item.id, checked);
     });
   };
 
@@ -58,29 +69,39 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
   };
 
   return (
-    <tr className={isPending ? "opacity-50" : ""}>
-      <td className="px-4 py-3">
-        <button
-          onClick={handleToggle}
+    <TableRow className={isPending ? "opacity-50" : ""}>
+      <TableCell>
+        <Switch
+          checked={item.enabled}
+          onCheckedChange={handleToggle}
           disabled={isPending}
-          className="text-lg"
-          title={item.enabled ? "監視中" : "停止中"}
-        >
-          {item.enabled ? "🟢" : "⚪"}
-        </button>
-      </td>
-      <td className="px-4 py-3 font-mono font-medium">{item.ticker}</td>
-      <td className="px-4 py-3">{item.company_name}</td>
-      <td className="px-4 py-3 text-gray-500">{item.memo || "—"}</td>
-      <td className="px-4 py-3">
-        <button
+        />
+      </TableCell>
+      <TableCell>
+        <span className="font-mono font-medium">{item.ticker}</span>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          {item.company_name}
+          {!item.enabled && (
+            <Badge variant="outline">停止中</Badge>
+          )}
+        </div>
+      </TableCell>
+      <TableCell className="text-gray-500">
+        {item.memo || "—"}
+      </TableCell>
+      <TableCell>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleRemove}
           disabled={isPending}
-          className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
+          className="text-red-600 hover:text-red-800 hover:bg-red-50"
         >
           削除
-        </button>
-      </td>
-    </tr>
+        </Button>
+      </TableCell>
+    </TableRow>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useTransition } from "react";
 import { removeTicker, toggleTicker } from "./actions";
 import { Button } from "@/components/ui/button";
@@ -88,11 +89,21 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
         />
       </TableCell>
       <TableCell>
-        <span className="font-mono font-medium">{item.ticker}</span>
+        <Link
+          href={`/ticker/${item.ticker}`}
+          className="font-mono font-medium text-gray-900 hover:text-gray-600 hover:underline"
+        >
+          {item.ticker}
+        </Link>
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
-          {item.company_name}
+          <Link
+            href={`/ticker/${item.ticker}`}
+            className="hover:underline"
+          >
+            {item.company_name}
+          </Link>
           {!item.enabled && <Badge variant="outline">停止中</Badge>}
         </div>
       </TableCell>
@@ -132,7 +143,7 @@ function WatchlistCard({ item }: { item: WatchlistItem }) {
       className={`rounded-lg border border-gray-200 p-4 ${isPending ? "opacity-50" : ""}`}
     >
       <div className="flex items-start justify-between">
-        <div className="space-y-1">
+        <Link href={`/ticker/${item.ticker}`} className="flex-1 space-y-1">
           <div className="flex items-center gap-2">
             <span className="font-mono text-base font-medium">
               {item.ticker}
@@ -143,7 +154,7 @@ function WatchlistCard({ item }: { item: WatchlistItem }) {
           {item.memo && (
             <p className="text-xs text-gray-400">{item.memo}</p>
           )}
-        </div>
+        </Link>
         <Switch
           checked={item.enabled}
           onCheckedChange={handleToggle}

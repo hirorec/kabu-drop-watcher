@@ -125,7 +125,10 @@ export default async function DashboardPage() {
                     key={`${drop.ticker}-${i}`}
                     className="flex items-center justify-between rounded-md border border-gray-100 p-3"
                   >
-                    <div>
+                    <Link
+                      href={`/ticker/${drop.ticker}`}
+                      className="flex-1 hover:underline"
+                    >
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-medium">
                           {drop.ticker}
@@ -137,7 +140,7 @@ export default async function DashboardPage() {
                       <span className="text-sm text-gray-400">
                         ¥{Number(drop.price).toLocaleString()}
                       </span>
-                    </div>
+                    </Link>
                     <Badge variant="destructive">
                       {Number(drop.change_pct).toFixed(2)}%
                     </Badge>
@@ -168,7 +171,10 @@ export default async function DashboardPage() {
                     key={snap.ticker}
                     className="flex items-center justify-between rounded-md border border-gray-100 p-3"
                   >
-                    <div>
+                    <Link
+                      href={`/ticker/${snap.ticker}`}
+                      className="flex-1 hover:underline"
+                    >
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-medium">
                           {snap.ticker}
@@ -180,7 +186,7 @@ export default async function DashboardPage() {
                       <span className="text-sm text-gray-400">
                         ¥{Number(snap.price).toLocaleString()}
                       </span>
-                    </div>
+                    </Link>
                     <Badge
                       variant={
                         Number(snap.change_pct) < 0 ? "destructive" : "success"
@@ -216,7 +222,10 @@ export default async function DashboardPage() {
                     key={event.id}
                     className="flex items-start justify-between rounded-md border border-gray-100 p-3"
                   >
-                    <div className="space-y-1">
+                    <Link
+                      href={`/ticker/${event.ticker}`}
+                      className="flex-1 space-y-1 hover:underline"
+                    >
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-medium">
                           {event.ticker}
@@ -229,7 +238,7 @@ export default async function DashboardPage() {
                       {event.period && (
                         <p className="text-xs text-gray-400">{event.period}</p>
                       )}
-                    </div>
+                    </Link>
                     <span className="shrink-0 text-xs text-gray-400">
                       {formatDistanceToNow(new Date(event.announced_at), {
                         addSuffix: true,

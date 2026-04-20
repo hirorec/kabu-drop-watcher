@@ -11,6 +11,7 @@ import {
   buildAnalysisNotification,
   buildPriceDropNotification,
 } from "@/features/notification/build";
+import { sendPushToUser } from "@/features/push/send";
 
 function createAdminClient() {
   return createClient<Database>(
@@ -201,7 +202,7 @@ export async function GET(request: Request) {
   const { data: inserted, error } = await supabase
     .from("notifications")
     .insert(toInsert)
-    .select("id, user_id, ticker, type");
+    .select("id, user_id, ticker, type, title, body, source_id");
 
   if (error) {
     console.error("通知挿入エラー:", error);
@@ -211,11 +212,31 @@ export async function GET(request: Request) {
     );
   }
 
-  console.log(`通知ジョブ: ${inserted?.length ?? 0}件挿入`);
+  // 6. Web Push 送信（失敗は各件ログのみ）
+  let pushSent = 0;
+  let pushRemoved = 0;
+  await Promise.all(
+    (inserted ?? []).map(async (n) => {
+      const res = await sendPushToUser(n.user_id, {
+        title: n.title,
+        body: n.body ?? undefined,
+        url: `/ticker/${n.ticker}`,
+        tag: n.source_id ?? undefined,
+      });
+      pushSent += res.sent;
+      pushRemoved += res.removed;
+    })
+  );
+
+  console.log(
+    `通知ジョブ: ${inserted?.length ?? 0}件挿入 / push ${pushSent}件 / 無効化 ${pushRemoved}件`
+  );
 
   return NextResponse.json({
     message: "Notification dispatcher completed",
     inserted_count: inserted?.length ?? 0,
+    push_sent: pushSent,
+    push_removed: pushRemoved,
     inserted: inserted ?? [],
   });
 }

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Bell, Mail, Smartphone } from "lucide-react";
+import { Bell, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
   Card,
@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DEFAULT_ALERT_RULE } from "@/features/notification/rules";
 import { SettingsForm } from "./settings-form";
+import { PushSubscription } from "./push-subscription";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -85,16 +86,9 @@ export default async function SettingsPage() {
             </div>
             <Badge variant="outline">未対応</Badge>
           </div>
-          <div className="flex items-center justify-between rounded-md border border-gray-100 p-3">
-            <div className="flex items-center gap-3">
-              <Smartphone className="h-4 w-4 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium">Web Push</p>
-                <p className="text-xs text-gray-400">今後追加予定</p>
-              </div>
-            </div>
-            <Badge variant="outline">未対応</Badge>
-          </div>
+          <PushSubscription
+            publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
+          />
         </CardContent>
       </Card>
     </div>

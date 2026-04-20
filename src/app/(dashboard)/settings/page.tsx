@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Bell, Mail } from "lucide-react";
+import { Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
   Card,
@@ -24,12 +24,14 @@ export default async function SettingsPage() {
 
   const { data: rule } = await supabase
     .from("user_alert_rules")
-    .select("min_drop_pct, min_score")
+    .select("min_drop_pct, min_score, channels")
     .eq("user_id", user.id)
     .maybeSingle();
 
   const minDropPct = rule?.min_drop_pct ?? DEFAULT_ALERT_RULE.min_drop_pct;
   const minScore = rule?.min_score ?? DEFAULT_ALERT_RULE.min_score;
+  const channels = (rule?.channels ?? {}) as { email?: boolean };
+  const emailEnabled = channels.email === true;
 
   return (
     <div className="space-y-6">
@@ -47,6 +49,7 @@ export default async function SettingsPage() {
           <SettingsForm
             initialMinDropPct={minDropPct}
             initialMinScore={minScore}
+            initialEmailEnabled={emailEnabled}
           />
           {!rule && (
             <p className="mt-4 text-xs text-gray-400">
@@ -75,16 +78,6 @@ export default async function SettingsPage() {
               </div>
             </div>
             <Badge variant="success">有効</Badge>
-          </div>
-          <div className="flex items-center justify-between rounded-md border border-gray-100 p-3">
-            <div className="flex items-center gap-3">
-              <Mail className="h-4 w-4 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium">メール</p>
-                <p className="text-xs text-gray-400">今後追加予定</p>
-              </div>
-            </div>
-            <Badge variant="outline">未対応</Badge>
           </div>
           <PushSubscription
             publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}

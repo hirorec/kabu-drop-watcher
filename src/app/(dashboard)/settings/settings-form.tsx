@@ -5,16 +5,23 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { saveAlertRule } from "./actions";
 
 type Props = {
   initialMinDropPct: number;
   initialMinScore: number;
+  initialEmailEnabled: boolean;
 };
 
-export function SettingsForm({ initialMinDropPct, initialMinScore }: Props) {
+export function SettingsForm({
+  initialMinDropPct,
+  initialMinScore,
+  initialEmailEnabled,
+}: Props) {
   const [minDropPct, setMinDropPct] = useState(String(initialMinDropPct));
   const [minScore, setMinScore] = useState(String(initialMinScore));
+  const [emailEnabled, setEmailEnabled] = useState(initialEmailEnabled);
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -22,6 +29,7 @@ export function SettingsForm({ initialMinDropPct, initialMinScore }: Props) {
     const formData = new FormData();
     formData.set("min_drop_pct", minDropPct);
     formData.set("min_score", minScore);
+    formData.set("email_enabled", emailEnabled ? "true" : "false");
 
     startTransition(async () => {
       const result = await saveAlertRule(formData);
@@ -80,6 +88,20 @@ export function SettingsForm({ initialMinDropPct, initialMinScore }: Props) {
         <p className="text-xs text-gray-400">
           0〜100 の範囲。例: 60 ならスコア 60 以上の分析結果だけを通知します。
         </p>
+      </div>
+
+      <div className="flex items-center justify-between rounded-md border border-gray-100 p-3">
+        <div>
+          <p className="text-sm font-medium">メール通知</p>
+          <p className="text-xs text-gray-400">
+            閾値を超えるアラートをメールで受け取ります（Resend 経由）。
+          </p>
+        </div>
+        <Switch
+          checked={emailEnabled}
+          onCheckedChange={setEmailEnabled}
+          disabled={isPending}
+        />
       </div>
 
       <div className="flex justify-end">

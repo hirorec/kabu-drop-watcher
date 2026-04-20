@@ -12,6 +12,13 @@ import {
   buildPriceDropNotification,
 } from "@/features/notification/build";
 import { sendPushToUser } from "@/features/push/send";
+import { sendEmail, buildNotificationHtml } from "@/features/email/send";
+
+function siteOrigin(): string {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
 
 function createAdminClient() {
   return createClient<Database>(
@@ -47,7 +54,7 @@ export async function GET(request: Request) {
       .eq("enabled", true),
     supabase
       .from("user_alert_rules")
-      .select("user_id, min_drop_pct, min_score"),
+      .select("user_id, min_drop_pct, min_score, channels"),
   ]);
 
   if (!watchlists || watchlists.length === 0) {
@@ -59,11 +66,15 @@ export async function GET(request: Request) {
 
   // user_id -> AlertRule
   const rulesByUser = new Map<string, AlertRule>();
+  // user_id -> email 通知 ON/OFF
+  const emailEnabledByUser = new Map<string, boolean>();
   for (const r of alertRules ?? []) {
     rulesByUser.set(r.user_id, {
       min_drop_pct: r.min_drop_pct,
       min_score: r.min_score,
     });
+    const channels = (r.channels ?? {}) as { email?: boolean };
+    emailEnabledByUser.set(r.user_id, channels.email === true);
   }
 
   // ticker -> [{user_id, company_name}]
@@ -228,8 +239,40 @@ export async function GET(request: Request) {
     })
   );
 
+  // 7. メール送信（email が有効なユーザーのみ）
+  const origin = siteOrigin();
+  const emailTargets = (inserted ?? []).filter(
+    (n) => emailEnabledByUser.get(n.user_id) === true
+  );
+  // 送信先メールを admin 経由で一括取得
+  const userIdToEmail = new Map<string, string>();
+  const uniqueUserIds = Array.from(new Set(emailTargets.map((n) => n.user_id)));
+  for (const uid of uniqueUserIds) {
+    const { data, error: userError } = await supabase.auth.admin.getUserById(uid);
+    if (!userError && data?.user?.email) {
+      userIdToEmail.set(uid, data.user.email);
+    }
+  }
+
+  let emailSent = 0;
+  await Promise.all(
+    emailTargets.map(async (n) => {
+      const to = userIdToEmail.get(n.user_id);
+      if (!to) return;
+      const url = `${origin}/ticker/${n.ticker}`;
+      const body = n.body ?? "";
+      const ok = await sendEmail({
+        to,
+        subject: n.title,
+        text: `${body}\n\n詳細: ${url}`,
+        html: buildNotificationHtml({ title: n.title, body, url }),
+      });
+      if (ok) emailSent += 1;
+    })
+  );
+
   console.log(
-    `通知ジョブ: ${inserted?.length ?? 0}件挿入 / push ${pushSent}件 / 無効化 ${pushRemoved}件`
+    `通知ジョブ: ${inserted?.length ?? 0}件挿入 / push ${pushSent}件 / 無効化 ${pushRemoved}件 / email ${emailSent}件`
   );
 
   return NextResponse.json({
@@ -237,6 +280,7 @@ export async function GET(request: Request) {
     inserted_count: inserted?.length ?? 0,
     push_sent: pushSent,
     push_removed: pushRemoved,
+    email_sent: emailSent,
     inserted: inserted ?? [],
   });
 }

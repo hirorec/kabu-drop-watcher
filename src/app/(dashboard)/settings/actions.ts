@@ -12,6 +12,7 @@ export async function saveAlertRule(
 ): Promise<SaveAlertRuleResult> {
   const minDropPctRaw = formData.get("min_drop_pct") as string | null;
   const minScoreRaw = formData.get("min_score") as string | null;
+  const emailEnabled = formData.get("email_enabled") === "true";
 
   const minDropPct = Number(minDropPctRaw);
   const minScore = Number(minScoreRaw);
@@ -32,6 +33,8 @@ export async function saveAlertRule(
     return { error: "認証が必要です" };
   }
 
+  const channels = { email: emailEnabled };
+
   // 既存レコードを確認
   const { data: existing } = await supabase
     .from("user_alert_rules")
@@ -42,7 +45,11 @@ export async function saveAlertRule(
   if (existing) {
     const { error } = await supabase
       .from("user_alert_rules")
-      .update({ min_drop_pct: minDropPct, min_score: minScore })
+      .update({
+        min_drop_pct: minDropPct,
+        min_score: minScore,
+        channels,
+      })
       .eq("id", existing.id);
 
     if (error) {
@@ -53,6 +60,7 @@ export async function saveAlertRule(
       user_id: user.id,
       min_drop_pct: minDropPct,
       min_score: minScore,
+      channels,
     });
 
     if (error) {

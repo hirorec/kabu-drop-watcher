@@ -40,7 +40,7 @@ export function MobileNav() {
             className="text-lg font-bold text-gray-900"
             onClick={() => setIsOpen(false)}
           >
-            kabu-drop
+            kabu-drop-watcher
           </Link>
           <Button
             variant="ghost"

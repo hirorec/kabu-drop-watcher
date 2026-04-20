@@ -6,6 +6,7 @@ import { ArrowLeft, TrendingDown, Activity, FileText, Bell } from "lucide-react"
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PriceChart } from "./price-chart";
 import {
   CONFIDENCE_JA,
   GUIDANCE_STATUS_JA,
@@ -178,6 +179,19 @@ export default async function TickerDetailPage({ params }: PageProps) {
               )}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* 日足チャート */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-indigo-500" />
+            日足チャート
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PriceChart ticker={watchItem.ticker} />
         </CardContent>
       </Card>
 

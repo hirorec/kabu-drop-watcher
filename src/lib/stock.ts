@@ -48,6 +48,72 @@ export async function fetchQuotes(tickers: string[]): Promise<StockQuote[]> {
   return results;
 }
 
+export type ChartRange = "1M" | "3M" | "6M" | "1Y";
+
+export type DailyOhlc = {
+  time: string; // YYYY-MM-DD
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+};
+
+/**
+ * 指定銘柄の日足 OHLC を取得する
+ */
+export async function fetchDailyOhlc(
+  ticker: string,
+  range: ChartRange
+): Promise<DailyOhlc[]> {
+  const symbol = toYahooSymbol(ticker);
+  const period2 = new Date();
+  const period1 = new Date();
+  switch (range) {
+    case "1M":
+      period1.setMonth(period1.getMonth() - 1);
+      break;
+    case "3M":
+      period1.setMonth(period1.getMonth() - 3);
+      break;
+    case "6M":
+      period1.setMonth(period1.getMonth() - 6);
+      break;
+    case "1Y":
+      period1.setFullYear(period1.getFullYear() - 1);
+      break;
+  }
+
+  const result = await yahooFinance.chart(symbol, {
+    period1,
+    period2,
+    interval: "1d",
+  });
+
+  const quotes = result.quotes ?? [];
+  const ohlc: DailyOhlc[] = [];
+  for (const q of quotes) {
+    if (
+      q.open == null ||
+      q.high == null ||
+      q.low == null ||
+      q.close == null ||
+      !q.date
+    ) {
+      continue;
+    }
+    ohlc.push({
+      time: new Date(q.date).toISOString().split("T")[0],
+      open: q.open,
+      high: q.high,
+      low: q.low,
+      close: q.close,
+      volume: q.volume ?? 0,
+    });
+  }
+  return ohlc;
+}
+
 /**
  * 内部ティッカー（例: 7974）を Yahoo Finance 形式（例: 7974.T）に変換
  */

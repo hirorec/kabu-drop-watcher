@@ -29,6 +29,7 @@
 | モジュール | 用途 |
 |------|----------|
 | radix-ui | ヘッドレスUI |
+| lucide-react | アイコン |
 | clsx + tailwind-merge | クラス名ユーティリティ |
 | class-variance-authority | バリアント管理 |
 | date-fns | 日時操作 |

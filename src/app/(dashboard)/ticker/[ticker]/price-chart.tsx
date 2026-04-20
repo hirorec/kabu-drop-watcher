@@ -52,6 +52,16 @@ export function PriceChart({ ticker }: { ticker: string }) {
       },
       rightPriceScale: { borderColor: "#e5e7eb" },
       timeScale: { borderColor: "#e5e7eb" },
+      // タッチの縦スワイプ・価格軸ドラッグはオフ。ホイール系はピンチのみ通したいので
+      // 後段の wheel capture ハンドラで通常スクロールだけ弾く（ピンチは ctrlKey 付き）
+      handleScroll: {
+        vertTouchDrag: false,
+      },
+      handleScale: {
+        axisPressedMouseMove: {
+          price: false,
+        },
+      },
     });
 
     // 日本の株アプリ（SBI 等）に合わせた配色：上昇=赤、下落=緑
@@ -67,7 +77,23 @@ export function PriceChart({ ticker }: { ticker: string }) {
     chartRef.current = chart;
     seriesRef.current = series;
 
+    // トラックパッドの2本指スクロール（ctrlKey なし）はページへ流し、
+    // ピンチ（ctrlKey 付きの wheel）のみチャートに通す
+    const container = containerRef.current;
+    const onWheelCapture = (e: WheelEvent) => {
+      if (!e.ctrlKey) {
+        e.stopPropagation();
+      }
+    };
+    container.addEventListener("wheel", onWheelCapture, {
+      capture: true,
+      passive: true,
+    });
+
     return () => {
+      container.removeEventListener("wheel", onWheelCapture, {
+        capture: true,
+      });
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;

@@ -4,6 +4,8 @@ import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
 import { ArrowLeft, TrendingDown, Activity, FileText, Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchQuotes } from "@/lib/stock";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PriceChart } from "./price-chart";
@@ -81,7 +83,34 @@ export default async function TickerDetailPage({ params }: PageProps) {
       .limit(5),
   ]);
 
-  const latest = snapshots?.[0];
+  // price_snapshots が空なら Yahoo Finance から取得してフォールバック
+  let resolvedSnapshots = snapshots ?? [];
+  if (resolvedSnapshots.length === 0) {
+    try {
+      const quotes = await fetchQuotes([ticker]);
+      const q = quotes[0];
+      if (q) {
+        const admin = createAdminClient();
+        const { data: inserted } = await admin
+          .from("price_snapshots")
+          .insert({
+            ticker: q.ticker,
+            price: q.price,
+            change_pct: q.changePct,
+            volume: q.volume,
+            captured_at: new Date().toISOString(),
+          })
+          .select("price, change_pct, volume, captured_at")
+          .single();
+        if (inserted) {
+          resolvedSnapshots = [inserted];
+        }
+      }
+    } catch (e) {
+      console.warn("リアルタイム株価取得失敗:", e);
+    }
+  }
+  const latest = resolvedSnapshots[0];
 
   return (
     <div className="space-y-6">
@@ -139,13 +168,13 @@ export default async function TickerDetailPage({ params }: PageProps) {
                   })}
                 </span>
               </div>
-              {snapshots && snapshots.length > 1 && (
+              {resolvedSnapshots.length > 1 && (
                 <div>
                   <p className="mb-2 text-xs font-medium text-gray-500">
                     直近の推移
                   </p>
                   <div className="space-y-1">
-                    {snapshots.slice(1).map((s, i) => (
+                    {resolvedSnapshots.slice(1).map((s, i) => (
                       <div
                         key={i}
                         className="flex items-center justify-between text-sm"

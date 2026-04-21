@@ -118,7 +118,18 @@ export default async function TickerDetailPage({ params }: PageProps) {
       console.warn("リアルタイム株価取得失敗:", e);
     }
   }
-  const latest = resolvedSnapshots[0];
+  // 終値付近で同一価格が繰り返し記録されることがあるので、連続する同一価格は1件にまとめる
+  const dedupedSnapshots = resolvedSnapshots.reduce<typeof resolvedSnapshots>(
+    (acc, s) => {
+      const prev = acc[acc.length - 1];
+      if (!prev || Number(prev.price) !== Number(s.price)) {
+        acc.push(s);
+      }
+      return acc;
+    },
+    []
+  );
+  const latest = dedupedSnapshots[0];
 
   return (
     <div className="space-y-6">
@@ -176,13 +187,13 @@ export default async function TickerDetailPage({ params }: PageProps) {
                   })}
                 </span>
               </div>
-              {resolvedSnapshots.length > 1 && (
+              {dedupedSnapshots.length > 1 && (
                 <div>
                   <p className="mb-2 text-xs font-medium text-gray-500">
                     直近の推移
                   </p>
                   <div className="space-y-1">
-                    {resolvedSnapshots.slice(1).map((s, i) => (
+                    {dedupedSnapshots.slice(1).map((s, i) => (
                       <div
                         key={i}
                         className="flex items-center justify-between text-sm"

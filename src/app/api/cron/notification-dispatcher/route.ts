@@ -152,6 +152,7 @@ export async function GET(request: Request) {
         summary: a.summary,
         notification_body: jsonResult?.notification_body ?? null,
         score: a.score,
+        threshold_score: rule.min_score,
       });
 
       toInsert.push({
@@ -187,6 +188,7 @@ export async function GET(request: Request) {
         company_name: w.company_name,
         price: d.price,
         change_pct: d.change_pct,
+        threshold_drop_pct: rule.min_drop_pct,
       });
 
       toInsert.push({
@@ -223,6 +225,16 @@ export async function GET(request: Request) {
     );
   }
 
+  // 分析通知は該当カード（/ticker/{ticker}#analysis-{source_id}）へアンカー遷移させる
+  const notificationUrl = (n: {
+    ticker: string;
+    type: string;
+    source_id: string | null;
+  }) =>
+    n.type === "disclosure_analysis" && n.source_id
+      ? `/ticker/${n.ticker}#analysis-${n.source_id}`
+      : `/ticker/${n.ticker}`;
+
   // 6. Web Push 送信（失敗は各件ログのみ）
   let pushSent = 0;
   let pushRemoved = 0;
@@ -231,7 +243,7 @@ export async function GET(request: Request) {
       const res = await sendPushToUser(n.user_id, {
         title: n.title,
         body: n.body ?? undefined,
-        url: `/ticker/${n.ticker}`,
+        url: notificationUrl(n),
         tag: n.source_id ?? undefined,
       });
       pushSent += res.sent;
@@ -259,7 +271,7 @@ export async function GET(request: Request) {
     emailTargets.map(async (n) => {
       const to = userIdToEmail.get(n.user_id);
       if (!to) return;
-      const url = `${origin}/ticker/${n.ticker}`;
+      const url = `${origin}${notificationUrl(n)}`;
       const body = n.body ?? "";
       const ok = await sendEmail({
         to,

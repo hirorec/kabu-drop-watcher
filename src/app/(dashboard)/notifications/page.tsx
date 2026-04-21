@@ -30,7 +30,7 @@ export default async function NotificationsPage({ searchParams }: PageProps) {
 
   let query = supabase
     .from("notifications")
-    .select("id, ticker, type, title, body, sent_at, opened_at")
+    .select("id, ticker, type, title, body, source_id, sent_at, opened_at")
     .eq("user_id", user.id)
     .order("sent_at", { ascending: false })
     .limit(100);

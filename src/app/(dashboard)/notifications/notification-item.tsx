@@ -15,6 +15,7 @@ type Notification = {
   type: string;
   title: string;
   body: string | null;
+  source_id: string | null;
   sent_at: string;
   opened_at: string | null;
 };
@@ -24,9 +25,17 @@ const TYPE_LABEL: Record<string, string> = {
   price_drop: "急落",
 };
 
+function buildTargetHref(item: Notification): string {
+  if (item.type === "disclosure_analysis" && item.source_id) {
+    return `/ticker/${item.ticker}#analysis-${item.source_id}`;
+  }
+  return `/ticker/${item.ticker}`;
+}
+
 export function NotificationItem({ item }: { item: Notification }) {
   const [isPending, startTransition] = useTransition();
   const isUnread = !item.opened_at;
+  const href = buildTargetHref(item);
 
   const handleMarkRead = () => {
     startTransition(async () => {
@@ -53,15 +62,19 @@ export function NotificationItem({ item }: { item: Notification }) {
               {TYPE_LABEL[item.type] ?? item.type}
             </Badge>
             <Link
-              href={`/ticker/${item.ticker}`}
+              href={href}
               className="font-mono text-sm font-medium hover:underline"
             >
               {item.ticker}
             </Link>
           </div>
-          <p className="text-sm font-medium text-gray-900">{item.title}</p>
+          <Link href={href} className="block hover:underline">
+            <p className="text-sm font-medium text-gray-900">{item.title}</p>
+          </Link>
           {item.body && (
-            <p className="text-sm text-gray-600">{item.body}</p>
+            <p className="whitespace-pre-wrap text-sm text-gray-600">
+              {item.body}
+            </p>
           )}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">

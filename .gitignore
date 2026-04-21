@@ -44,3 +44,10 @@ supabase.md
 client_secret_*.json
 
 docs/スクリーンショット*
+
+# Claude Code / Playwright MCP workspace artifacts
+.claude/
+.playwright-mcp/
+
+# Supabase CLI temp files
+/supabase/.temp/

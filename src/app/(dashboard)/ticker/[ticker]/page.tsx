@@ -4,11 +4,11 @@ import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
 import {
   ArrowLeft,
-  TrendingDown,
   Activity,
   FileText,
   Bell,
   MessageCircle,
+  Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -153,6 +153,163 @@ export default async function TickerDetailPage({ params }: PageProps) {
         <p className="text-sm text-gray-500">{watchItem.memo}</p>
       )}
 
+      {/* 直近の AI 判断（最上段） */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-blue-500" />
+              直近の AI 判断
+            </CardTitle>
+            <AnalyzeButton ticker={watchItem.ticker} />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {(analyses?.length ?? 0) === 0 ? (
+            <p className="text-sm text-gray-500">
+              まだ分析結果がありません。「今すぐ AI 分析」から実行できます。
+            </p>
+          ) : (
+            (() => {
+              const hero = analyses![0];
+              const heroJson = (hero.json_result ?? {}) as {
+                confidence?: string;
+                shareholder_return_signal?: string;
+              };
+              return (
+                <div className="space-y-6">
+                  {/* hero（最新の分析） */}
+                  <div
+                    id={`analysis-${hero.id}`}
+                    className="scroll-mt-24 rounded-lg border border-blue-100 bg-blue-50/40 p-5"
+                  >
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div>
+                        <p className="text-xs font-medium text-gray-500">
+                          スコア
+                        </p>
+                        <p className="text-3xl font-bold text-blue-700">
+                          {hero.score ?? "—"}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Badge variant="outline" className="w-fit">
+                          {labelOrRaw(REASON_LABEL_JA, hero.reason_label)}
+                        </Badge>
+                        <Badge variant="outline" className="w-fit">
+                          {labelOrRaw(
+                            STRUCTURAL_JA,
+                            hero.structural_classification
+                          )}
+                        </Badge>
+                      </div>
+                      <div className="ml-auto flex flex-col items-end gap-1 text-xs text-gray-500">
+                        {heroJson.confidence && (
+                          <span>
+                            確信度:{" "}
+                            <span className="font-medium text-gray-700">
+                              {labelOrRaw(CONFIDENCE_JA, heroJson.confidence)}
+                            </span>
+                          </span>
+                        )}
+                        <span>
+                          {formatDistanceToNow(new Date(hero.created_at), {
+                            addSuffix: true,
+                            locale: ja,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    {hero.summary && (
+                      <p className="mt-4 text-sm text-gray-800">
+                        {hero.summary}
+                      </p>
+                    )}
+                    <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-2 rounded-md bg-white/60 p-3 text-xs sm:grid-cols-3">
+                      <div className="flex justify-between sm:block">
+                        <dt className="text-gray-400">通期見通し</dt>
+                        <dd className="font-medium">
+                          {labelOrRaw(GUIDANCE_STATUS_JA, hero.guidance_status)}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between sm:block">
+                        <dt className="text-gray-400">KPI</dt>
+                        <dd className="font-medium">
+                          {labelOrRaw(KPI_STATUS_JA, hero.kpi_status)}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between sm:block">
+                        <dt className="text-gray-400">株主還元</dt>
+                        <dd className="font-medium">
+                          {labelOrRaw(
+                            SHAREHOLDER_RETURN_JA,
+                            heroJson.shareholder_return_signal
+                          )}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  {/* 過去の分析 */}
+                  {analyses!.length > 1 && (
+                    <div className="space-y-3">
+                      <p className="text-xs font-medium text-gray-500">
+                        過去の分析（{analyses!.length - 1} 件）
+                      </p>
+                      {analyses!.slice(1).map((a) => {
+                        const json = (a.json_result ?? {}) as {
+                          confidence?: string;
+                          shareholder_return_signal?: string;
+                        };
+                        return (
+                          <div
+                            key={a.id}
+                            id={`analysis-${a.id}`}
+                            className="scroll-mt-24 rounded-md border border-gray-100 p-3"
+                          >
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant="default">
+                                スコア {a.score ?? "—"}
+                              </Badge>
+                              <Badge variant="outline">
+                                {labelOrRaw(REASON_LABEL_JA, a.reason_label)}
+                              </Badge>
+                              <Badge variant="outline">
+                                {labelOrRaw(
+                                  STRUCTURAL_JA,
+                                  a.structural_classification
+                                )}
+                              </Badge>
+                              {json.confidence && (
+                                <span className="text-xs text-gray-400">
+                                  確信度:{" "}
+                                  {labelOrRaw(CONFIDENCE_JA, json.confidence)}
+                                </span>
+                              )}
+                              <span className="ml-auto text-xs text-gray-400">
+                                {formatDistanceToNow(new Date(a.created_at), {
+                                  addSuffix: true,
+                                  locale: ja,
+                                })}
+                              </span>
+                            </div>
+                            {a.summary && (
+                              <p className="mt-2 text-sm text-gray-700">
+                                {a.summary}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()
+          )}
+        </CardContent>
+      </Card>
+
       {/* 最新株価 */}
       <Card>
         <CardHeader>
@@ -241,96 +398,6 @@ export default async function TickerDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardContent>
           <PriceChart ticker={watchItem.ticker} />
-        </CardContent>
-      </Card>
-
-      {/* AI 分析結果 */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-blue-500" />
-              AI 分析結果
-            </CardTitle>
-            <AnalyzeButton ticker={watchItem.ticker} />
-          </div>
-        </CardHeader>
-        <CardContent>
-          {(analyses?.length ?? 0) === 0 ? (
-            <p className="text-sm text-gray-500">
-              まだ分析結果がありません。
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {analyses!.map((a) => {
-                const json = (a.json_result ?? {}) as {
-                  confidence?: string;
-                  shareholder_return_signal?: string;
-                };
-                return (
-                  <div
-                    key={a.id}
-                    className="rounded-md border border-gray-100 p-4"
-                  >
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <Badge variant="default">
-                        スコア {a.score ?? "—"}
-                      </Badge>
-                      <Badge variant="outline">
-                        {labelOrRaw(REASON_LABEL_JA, a.reason_label)}
-                      </Badge>
-                      <Badge variant="outline">
-                        {labelOrRaw(
-                          STRUCTURAL_JA,
-                          a.structural_classification
-                        )}
-                      </Badge>
-                      {json.confidence && (
-                        <span className="text-xs text-gray-400">
-                          確信度: {labelOrRaw(CONFIDENCE_JA, json.confidence)}
-                        </span>
-                      )}
-                      <span className="ml-auto text-xs text-gray-400">
-                        {formatDistanceToNow(new Date(a.created_at), {
-                          addSuffix: true,
-                          locale: ja,
-                        })}
-                      </span>
-                    </div>
-                    {a.summary && (
-                      <p className="text-sm text-gray-700">{a.summary}</p>
-                    )}
-                    <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 text-xs sm:grid-cols-3">
-                      <div className="flex justify-between sm:block">
-                        <dt className="text-gray-400">通期見通し</dt>
-                        <dd className="font-medium">
-                          {labelOrRaw(
-                            GUIDANCE_STATUS_JA,
-                            a.guidance_status
-                          )}
-                        </dd>
-                      </div>
-                      <div className="flex justify-between sm:block">
-                        <dt className="text-gray-400">KPI</dt>
-                        <dd className="font-medium">
-                          {labelOrRaw(KPI_STATUS_JA, a.kpi_status)}
-                        </dd>
-                      </div>
-                      <div className="flex justify-between sm:block">
-                        <dt className="text-gray-400">株主還元</dt>
-                        <dd className="font-medium">
-                          {labelOrRaw(
-                            SHAREHOLDER_RETURN_JA,
-                            json.shareholder_return_signal
-                          )}
-                        </dd>
-                      </div>
-                    </dl>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </CardContent>
       </Card>
 
